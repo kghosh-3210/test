@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Video Gallery</title>
+
+<style>
+    
+body {
+    font-family: Arial, sans-serif;
+    background: #f3f3f3;
+    padding: 20px;
+    margin: 0;
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+select, button, input {
+    padding: 8px 12px;
+    font-size: 14px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+button {
+    cursor: pointer;
+    background: #007bff;
+    color: white;
+    border: none;
+}
+
+button:disabled {
+    background: #999;
+}
+
+.gallery {
+    display: grid;
+    gap: 20px;
+}
+
+.video-card {
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0,0,0,.15);
+}
+
+.video-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000;
+}
+
+.video-wrapper video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.info {
+    padding: 12px;
+    text-align: center;
+}
+
+.title {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.meta {
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 10px;
+}
+
+.download-btn {
+    display: block;
+    padding: 10px;
+    background: #28a745;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 6px;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+@media (max-width: 600px) {
+    select, button { width: 100%; }
+}
+</style>
+</head>
+
+<body>
+
+<h2>Video Gallery</h2>
+
+<div class="controls">
+    <div>
+        <input type="number" id="Start" value="66100">
+        <button type="button" onclick="load()">Search</button>
+    </div>
+    <select id="sortBy">
+        <option value="titleAsc">Title A–Z</option>
+        <option value="titleDesc">Title Z–A</option>
+        <option value="timeAsc">Duration ↑</option>
+        <option value="timeDesc">Duration ↓</option>
+    </select>
+
+    <select id="columns">
+        <option value="2">2 Columns</option>
+        <option value="3">3 Columns</option>
+        <option value="4" selected>4 Columns</option>
+        <option value="5">5 Columns</option>
+        <option value="6">6 Columns</option>
+    </select>
+
+    <select id="perPage">
+        <option value="6">6 / page</option>
+        <option value="12">12 / page</option>
+        <option value="16">16 / page</option>
+        <option value="20" selected>20 / page</option>
+        <option value="24">24 / page</option>
+        <option value="28">28 / page</option>
+        <option value="32">32 / page</option>
+        <option value="36">36 / page</option>
+        <option value="40">40 / page</option>
+        <option value="44">44 / page</option>
+        <option value="48">48 / page</option>
+        <option value="52">52/ page</option>
+    </select>
+</div>
+
+<div class="gallery" id="gallery"></div>
+
+<div class="pagination">
+    <button id="prevBtn">Previous</button>
+    <span id="pageInfo"></span>
+    <button id="nextBtn">Next</button>
+</div>
+
+<script>
+/* ===== DATA ===== */
+function load(){let videos = [];
+//videos.push({ title: "Broken Video", src: "https://ser3.masahub.cc/myfiless/id/1.mp4", duration: 0 });
+var start = document.getElementById("Start").value;
+console.log(typeof(Number(start)));
+
+for (let i = Number(start); i <= Number(Number(start)+100); i++) {
+    videos.push({ title: "Video " + i, src: `https://ser3.masahub.cc/myfiless/id/${i}.mp4`, duration: 0 });
+}
+
+//videos = videos.filter(item => item.src !== 'Invalid / unavailable video');
+
+const gallery = document.getElementById("gallery");
+const sortBy = document.getElementById("sortBy");
+const columns = document.getElementById("columns");
+const perPage = document.getElementById("perPage");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+const pageInfo = document.getElementById("pageInfo");
+
+let currentPage = 1;
+
+
+function setColumns(c) {
+    gallery.style.gridTemplateColumns = `repeat(${c}, 1fr)`;
+}
+
+function formatTime(sec) {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}m ${s}s`;
+}
+
+function sortVideos() {
+    const v = sortBy.value;
+    videos.sort((a,b) => {
+        if (v === "titleAsc") return a.title.localeCompare(b.title);
+        if (v === "titleDesc") return b.title.localeCompare(a.title);
+        if (v === "timeAsc") return a.duration - b.duration;
+        if (v === "timeDesc") return b.duration - a.duration;
+    });
+}
+
+function render() {
+    sortVideos();
+    gallery.innerHTML = "";
+
+    const size = parseInt(perPage.value);
+    const start = (currentPage - 1) * size;
+    const list = videos.slice(start, start + size);
+
+    list.forEach(v => {
+        const card = document.createElement("div");
+        card.className = "video-card";
+
+        card.innerHTML = `
+            <div class="video-wrapper">
+                <video preload="metadata" controls></video>
+            </div>
+            <div class="info">
+                <div class="title">${v.title}</div>
+                <div class="meta">Checking video...</div>
+                <a class="download-btn" href="${v.src}" download>⬇ Download</a>
+            </div>
+        `;
+
+        gallery.appendChild(card);
+
+        const video = card.querySelector("video");
+        const meta = card.querySelector(".meta");
+
+        let validated = false;
+
+        function markInvalid() {
+            if (validated) return;
+            validated = true;
+            card.classList.add("invalid");
+            meta.textContent = "Invalid / unavailable video";
+            video.controls = false;
+            video.src = "";
+        }
+
+        /* TIMEOUT SAFETY (KEY FIX) */
+        const timer = setTimeout(markInvalid, 3000);
+
+        video.src = v.src;
+
+        video.addEventListener("loadedmetadata", () => {
+            if (validated) return;
+            clearTimeout(timer);
+            validated = true;
+            v.duration = Math.floor(video.duration);
+            meta.textContent = "Duration: " + formatTime(v.duration);
+        });
+
+        video.addEventListener("error", markInvalid);
+    });
+
+    const total = Math.ceil(videos.length / size);
+    pageInfo.textContent = `Page ${currentPage} of ${total}`;
+    prevBtn.disabled = currentPage === 1;
+    nextBtn.disabled = currentPage === total;
+}
+
+/* EVENTS */
+sortBy.onchange = () => { currentPage = 1; render(); };
+perPage.onchange = () => { currentPage = 1; render(); };
+columns.onchange = e => setColumns(e.target.value);
+prevBtn.onclick = () => { currentPage--; render(); };
+nextBtn.onclick = () => { currentPage++; render(); };
+
+setColumns(columns.value);
+render();
+}
+
+load();
+</script>
+
+</body>
+</html>
+
