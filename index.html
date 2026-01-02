@@ -106,14 +106,19 @@ button:disabled {
 }
 </style>
 </head>
-
 <body>
 
 <h2>Video Gallery</h2>
 
-<div class="controls">
+<div class="controls"> 
+   <div>
+    
+        <input type="number" id="increament" value="1">
+        <button type="button" onclick="load()">download</button>
+   </div>
     <div>
         <input type="number" id="Start" value="66100">
+        <input type="number" id="End" value="10">
         <button type="button" onclick="load()">Search</button>
     </div>
     <select id="sortBy">
@@ -124,9 +129,9 @@ button:disabled {
     </select>
 
     <select id="columns">
-        <option value="2" selected>2 Columns</option>
+        <option value="2">2 Columns</option>
         <option value="3">3 Columns</option>
-        <option value="4">4 Columns</option>
+        <option value="4" selected>4 Columns</option>
         <option value="5">5 Columns</option>
         <option value="6">6 Columns</option>
     </select>
@@ -156,13 +161,16 @@ button:disabled {
 </div>
 
 <script>
+   
+    
 /* ===== DATA ===== */
 function load(){let videos = [];
 //videos.push({ title: "Broken Video", src: "https://ser3.masahub.cc/myfiless/id/1.mp4", duration: 0 });
 var start = document.getElementById("Start").value;
+var end = document.getElementById("End").value;
 console.log(typeof(Number(start)));
 
-for (let i = Number(start); i <= Number(Number(start)+100); i++) {
+for (let i = Number(start); i <= Number(Number(start)+Number(end)); i++) {
     videos.push({ title: "Video " + i, src: `https://ser3.masahub.cc/myfiless/id/${i}.mp4`, duration: 0 });
 }
 
@@ -276,5 +284,4 @@ load();
 
 </body>
 </html>
-
 
