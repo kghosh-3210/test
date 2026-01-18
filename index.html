@@ -1,288 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Video Gallery</title>
+  <meta charset="UTF-8" />
+  <title>Google Sign-In (GSI + FedCM)</title>
 
-<style>
-    
-body {
-    font-family: Arial, sans-serif;
-    background: #f3f3f3;
-    padding: 20px;
-    margin: 0;
-}
-h2 {
-    text-align: center;
-    margin-bottom: 15px;
-}
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-.controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
-    margin-bottom: 20px;
-}
-
-select, button, input {
-    padding: 8px 12px;
-    font-size: 14px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-}
-
-button {
-    cursor: pointer;
-    background: #007bff;
-    color: white;
-    border: none;
-}
-
-button:disabled {
-    background: #999;
-}
-
-.gallery {
-    display: grid;
-    gap: 20px;
-}
-
-.video-card {
-    background: #fff;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 4px 10px rgba(0,0,0,.15);
-}
-
-.video-wrapper {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    background: #000;
-}
-
-.video-wrapper video {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-}
-
-.info {
-    padding: 12px;
-    text-align: center;
-}
-
-.title {
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-.meta {
-    font-size: 13px;
-    color: #555;
-    margin-bottom: 10px;
-}
-
-.download-btn {
-    display: block;
-    padding: 10px;
-    background: #28a745;
-    color: #fff;
-    text-decoration: none;
-    border-radius: 6px;
-}
-
-.pagination {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 25px;
-}
-
-@media (max-width: 600px) {
-    select, button { width: 100%; }
-}
-</style>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+  </style>
 </head>
 <body>
 
-<h2>Video Gallery</h2>
+  <!-- GSI Config -->
+  <div id="g_id_onload"
+       data-client_id="791605933783-ehbta9r4ht1pm9pufqevph0ojc18mv7f.apps.googleusercontent.com"
+       data-callback="handleCredential"
+       data-use_fedcm="false"
+       data-auto_prompt="false"
+       >
+  </div>
 
-<div class="controls"> 
-   <div>
-    
-        <input type="number" id="increament" value="1">
-        <button type="button" onclick="load()">download</button>
-   </div>
-    <div>
-        <input type="number" id="Start" value="66100">
-        <input type="number" id="End" value="10">
-        <button type="button" onclick="load()">Search</button>
-    </div>
-    <select id="sortBy">
-        <option value="titleAsc">Title A–Z</option>
-        <option value="titleDesc">Title Z–A</option>
-        <option value="timeAsc">Duration ↑</option>
-        <option value="timeDesc">Duration ↓</option>
-    </select>
-
-    <select id="columns">
-        <option value="2" selected>2 Columns</option>
-        <option value="3">3 Columns</option>
-        <option value="4">4 Columns</option>
-        <option value="5">5 Columns</option>
-        <option value="6">6 Columns</option>
-    </select>
-
-    <select id="perPage">
-        <option value="6">6 / page</option>
-        <option value="12">12 / page</option>
-        <option value="16">16 / page</option>
-        <option value="20" selected>20 / page</option>
-        <option value="24">24 / page</option>
-        <option value="28">28 / page</option>
-        <option value="32">32 / page</option>
-        <option value="36">36 / page</option>
-        <option value="40">40 / page</option>
-        <option value="44">44 / page</option>
-        <option value="48">48 / page</option>
-        <option value="52">52/ page</option>
-    </select>
-</div>
-
-<div class="gallery" id="gallery"></div>
-
-<div class="pagination">
-    <button id="prevBtn">Previous</button>
-    <span id="pageInfo"></span>
-    <button id="nextBtn">Next</button>
-</div>
-
+  <!-- Google Sign-In Button -->
+  <div class="g_id_signin"
+       data-type="standard"
+       data-size="large"
+       data-theme="outline"
+       data-text="sign_in_with"
+       data-shape="rectangular">
+  </div>
+  <br/>
 <script>
-   
-    
-/* ===== DATA ===== */
-function load(){let videos = [];
-//videos.push({ title: "Broken Video", src: "https://ser3.masahub.cc/myfiless/id/1.mp4", duration: 0 });
-var start = document.getElementById("Start").value;
-var end = document.getElementById("End").value;
-console.log(typeof(Number(start)));
-
-for (let i = Number(start); i <= Number(Number(start)+Number(end)); i++) {
-    videos.push({ title: "Video " + i, src: `https://ser3.masahub.cc/myfiless/id/${i}.mp4`, duration: 0 });
+function parseJwt(token) {
+  const base64Url = token.split('.')[1];
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  const jsonPayload = decodeURIComponent(
+    atob(base64)
+      .split('')
+      .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+      .join('')
+  );
+  return JSON.parse(jsonPayload);
 }
 
-//videos = videos.filter(item => item.src !== 'Invalid / unavailable video');
+function handleCredential(response) {
+  // Decode the ID token
+  const user = parseJwt(response.credential);
 
-const gallery = document.getElementById("gallery");
-const sortBy = document.getElementById("sortBy");
-const columns = document.getElementById("columns");
-const perPage = document.getElementById("perPage");
-const prevBtn = document.getElementById("prevBtn");
-const nextBtn = document.getElementById("nextBtn");
-const pageInfo = document.getElementById("pageInfo");
+  console.log("User ID:", user.sub);
+  console.log("Email:", user.email);
+  console.log("Name:", user.name);
+  console.log("Picture:", user.picture);
 
-let currentPage = 1;
-
-
-function setColumns(c) {
-    gallery.style.gridTemplateColumns = `repeat(${c}, 1fr)`;
+  // Example: show on page
+  document.body.innerHTML += `
+    <p><b>Name:</b> ${user.name}</p>
+    <p><b>Email:</b> ${user.email}</p>
+    <img src="${user.picture}" width="80">
+  `;
 }
+console.log("Origin:", window.location.origin);
+document.querySelector('#g_id_onload').dataset.client_id
 
-function formatTime(sec) {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${m}m ${s}s`;
-}
-
-function sortVideos() {
-    const v = sortBy.value;
-    videos.sort((a,b) => {
-        if (v === "titleAsc") return a.title.localeCompare(b.title);
-        if (v === "titleDesc") return b.title.localeCompare(a.title);
-        if (v === "timeAsc") return a.duration - b.duration;
-        if (v === "timeDesc") return b.duration - a.duration;
-    });
-}
-
-function render() {
-    sortVideos();
-    gallery.innerHTML = "";
-
-    const size = parseInt(perPage.value);
-    const start = (currentPage - 1) * size;
-    const list = videos.slice(start, start + size);
-
-    list.forEach(v => {
-        const card = document.createElement("div");
-        card.className = "video-card";
-
-        card.innerHTML = `
-            <div class="video-wrapper">
-                <video preload="metadata" controls></video>
-            </div>
-            <div class="info">
-                <div class="title">${v.title}</div>
-                <div class="meta">Checking video...</div>
-                <a class="download-btn" href="${v.src}" download>⬇ Download</a>
-            </div>
-        `;
-
-        gallery.appendChild(card);
-
-        const video = card.querySelector("video");
-        const meta = card.querySelector(".meta");
-
-        let validated = false;
-
-        function markInvalid() {
-            if (validated) return;
-            validated = true;
-            card.classList.add("invalid");
-            meta.textContent = "Invalid / unavailable video";
-            video.controls = false;
-            video.src = "";
-        }
-
-        /* TIMEOUT SAFETY (KEY FIX) */
-        const timer = setTimeout(markInvalid, 3000);
-
-        video.src = v.src;
-
-        video.addEventListener("loadedmetadata", () => {
-            if (validated) return;
-            clearTimeout(timer);
-            validated = true;
-            v.duration = Math.floor(video.duration);
-            meta.textContent = "Duration: " + formatTime(v.duration);
-        });
-
-        video.addEventListener("error", markInvalid);
-    });
-
-    const total = Math.ceil(videos.length / size);
-    pageInfo.textContent = `Page ${currentPage} of ${total}`;
-    prevBtn.disabled = currentPage === 1;
-    nextBtn.disabled = currentPage === total;
-}
-
-/* EVENTS */
-sortBy.onchange = () => { currentPage = 1; render(); };
-perPage.onchange = () => { currentPage = 1; render(); };
-columns.onchange = e => setColumns(e.target.value);
-prevBtn.onclick = () => { currentPage--; render(); };
-nextBtn.onclick = () => { currentPage++; render(); };
-
-setColumns(columns.value);
-render();
-}
-
-load();
 </script>
+
 
 </body>
 </html>
-
-
-
